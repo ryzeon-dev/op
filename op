@@ -1,0 +1,82 @@
+#!/usr/bin/python3
+
+import sys
+
+def decodeAddress(address):
+    return '.'.join(( str(int(address[6:], 16)), str(int(address[4:6], 16)), str(int(address[2:4], 16)), str(int(address[:2], 16))))
+
+
+def unpackLine(line):
+    splitted = line.split(' ')
+
+    while '' in splitted:
+        splitted.remove('')
+
+    localPair = splitted[1].split(':')
+    listenAddress = decodeAddress(localPair[0])
+    listenPort = str(int(localPair[1], 16))
+
+    return listenAddress, listenPort 
+
+if __name__ == '__main__':
+    args = sys.argv[1:]
+
+    if 'help' in args:
+        print('op: Open Ports')
+        print('usage: op [ARGS]\n')
+        print('args:')
+        print('    help    Show this message and exit')
+        print('    tcp     Only show TCP open ports')
+        print('    udp     Only show UDP open ports')
+        print('in absence of arguments, both TCP and UDP will be shown')
+        sys.exit(0)
+    
+    elif 'tcp' in args:
+        args.remove('tcp')
+        
+        showUdp = False 
+        showTcp = True
+
+    elif 'udp' in args:
+        args.remove('udp')
+
+        showTcp = False 
+        showUdp = True 
+
+    else:
+        showUdp = True 
+        showTcp = True
+
+    if args:
+        print('Invalid argument(s). Pass `help` as argument to get help')
+        sys.exit(1)
+    
+    print('ADDRESS'.ljust(15), ':', 'PORT')
+
+    if showTcp:
+        with open('/proc/net/tcp', 'r') as file: 
+            tcp = file.read()
+        
+        if showTcp and showUdp:
+            print('TCP')
+        
+        for line in tcp.split('\n'):
+            if not line or line.strip().split(' ')[3] != '0A':
+                continue 
+
+            address, port = unpackLine(line.strip())
+            print(f'{address.ljust(15)} : {port}')
+
+    if showUdp:
+        with open('/proc/net/udp', 'r') as file: 
+            udp = file.read()
+        
+        if showUdp and showTcp:
+            print('\nUDP')
+        
+        for line in udp.split('\n'):
+            if not line or line.strip().split(' ')[3] != '07':
+                continue 
+
+            address, port = unpackLine(line.strip())
+            print(f'{address.ljust(15)} : {port}')
