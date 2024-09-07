@@ -11,23 +11,23 @@ sudo ./install.sh
 ## Usage
 Run with no arguments to display both TCP and UDP open ports 
 ```
-op
+$ op
 ```
 
 
 Pass `tcp` to only show TCP open ports
 ```
-op tcp
+$ op tcp
 ``` 
 
 
 Pass `udp` to only show UDP open ports 
 ```
-op udp
+$ op udp
 ``` 
 
 
 Pass `help` to get help
 ```
-op help
+$ op help
 ```
