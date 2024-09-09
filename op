@@ -123,6 +123,9 @@ if __name__ == '__main__':
             elif inode in udpMap:
                 udpMap[inode].append(f'{pid} -> {name}')
 
+    print(tcpMap)
+    print(udpMap)
+
     print('ADDRESS'.ljust(15), ':', 'PORT'.ljust(5), '   PID -> NAME')
     if showUdp and showTcp:
         print('TCP')
@@ -132,12 +135,12 @@ if __name__ == '__main__':
             if len(values) == 2:
                 ip, port = values 
                 
-                print(f'{address.ljust(15)} : {str(port).ljust(5)}')
+                print(f'{ip.ljust(15)} : {str(port).ljust(5)}')
             
             elif len(values) == 3:
                 ip, port, pid = values 
 
-                print(f'{address.ljust(15)} : {str(port).ljust(5)}    {pid}')
+                print(f'{ip.ljust(15)} : {str(port).ljust(5)}    {pid}')
 
     if showUdp and showTcp:
         print('UDP')
@@ -147,9 +150,9 @@ if __name__ == '__main__':
             if len(values) == 2:
                 ip, port = values 
 
-                print(f'{address.ljust(15)} : {str(port).ljust(5)}')
+                print(f'{ip.ljust(15)} : {str(port).ljust(5)}')
         
             elif len(values) == 3:
                 ip, port, pid = values 
 
-                print(f'{address.ljust(15)} : {str(port).ljust(5)}    {pid}')
+                print(f'{ip.ljust(15)} : {str(port).ljust(5)}    {pid}')
