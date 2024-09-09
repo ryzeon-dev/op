@@ -123,9 +123,6 @@ if __name__ == '__main__':
             elif inode in udpMap:
                 udpMap[inode].append(f'{pid} -> {name}')
 
-    print(tcpMap)
-    print(udpMap)
-
     print('ADDRESS'.ljust(15), ':', 'PORT'.ljust(5), '   PID -> NAME')
     if showUdp and showTcp:
         print('TCP')
