@@ -1,6 +1,10 @@
 #!/usr/bin/python3
 
 import sys
+import os
+import re
+
+from subprocess import getoutput
 
 def decodeAddress(address):
     return '.'.join(( str(int(address[6:], 16)), str(int(address[4:6], 16)), str(int(address[2:4], 16)), str(int(address[:2], 16))))
@@ -16,7 +20,11 @@ def unpackLine(line):
     listenAddress = decodeAddress(localPair[0])
     listenPort = str(int(localPair[1], 16))
 
-    return listenAddress, listenPort 
+    inode = splitted[9].strip()
+    return listenAddress, listenPort, inode 
+
+tcpMap = {}
+udpMap = {}
 
 if __name__ == '__main__':
     args = sys.argv[1:]
@@ -28,12 +36,13 @@ if __name__ == '__main__':
         print('    help    Show this message and exit')
         print('    tcp     Only show TCP open ports')
         print('    udp     Only show UDP open ports')
-        print('in absence of arguments, both TCP and UDP will be shown')
+        print('\nin absence of arguments, both TCP and UDP will be shown')
+        print('run as root to obtain pid and process name for every listening port')
         sys.exit(0)
     
     elif 'tcp' in args:
         args.remove('tcp')
-        
+
         showUdp = False 
         showTcp = True
 
@@ -51,32 +60,96 @@ if __name__ == '__main__':
         print('Invalid argument(s). Pass `help` as argument to get help')
         sys.exit(1)
     
-    print('ADDRESS'.ljust(15), ':', 'PORT')
+    if os.getuid():
+        print('ADDRESS'.ljust(15), ':', 'PORT')
 
     if showTcp:
         with open('/proc/net/tcp', 'r') as file: 
             tcp = file.read()
         
-        if showTcp and showUdp:
+        if showTcp and showUdp and os.getuid():
             print('TCP')
         
         for line in tcp.split('\n'):
             if not line or line.strip().split(' ')[3] != '0A':
                 continue 
 
-            address, port = unpackLine(line.strip())
-            print(f'{address.ljust(15)} : {port}')
+            address, port, inode = unpackLine(line.strip())
+            if os.getuid():
+                print(f'{address.ljust(15)} : {port}')
+            
+            else:
+                tcpMap[inode] = [address, port]
 
     if showUdp:
         with open('/proc/net/udp', 'r') as file: 
             udp = file.read()
         
-        if showUdp and showTcp:
-            print('\nUDP')
+        if showUdp and showTcp and os.getuid():
+            print('UDP')
         
         for line in udp.split('\n'):
             if not line or line.strip().split(' ')[3] != '07':
                 continue 
 
-            address, port = unpackLine(line.strip())
-            print(f'{address.ljust(15)} : {port}')
+            address, port, inode = unpackLine(line.strip())
+            if os.getuid():
+                print(f'{address.ljust(15)} : {port}')
+            
+            else:
+                udpMap[inode] = [address, port]
+    if os.getuid():
+        sys.exit(0)
+
+    proc = os.listdir('/proc')
+
+    for element in proc:
+        match = re.fullmatch('[0-9]*', element)
+
+        if not match:
+            continue 
+
+        pid = match.string
+        name = getoutput(f'cat /proc/{pid}/status | grep Name').replace('Name:', '').strip()
+
+        requests = getoutput(f'ls -l /proc/{pid}/fd | grep socket |' 'awk \'{ print $NF }\'').split('\n')
+
+        for request in requests:
+            inode = request.replace('socket:[', '').replace(']', '')
+             
+            if inode in tcpMap:
+                tcpMap[inode].append(f'{pid} -> {name}')
+
+            elif inode in udpMap:
+                udpMap[inode].append(f'{pid} -> {name}')
+
+    print('ADDRESS'.ljust(15), ':', 'PORT'.ljust(5), '   PID -> NAME')
+    if showUdp and showTcp:
+        print('TCP')
+    
+    if showTcp:
+        for _, values in tcpMap.items():
+            if len(values) == 2:
+                ip, port = values 
+                
+                print(f'{address.ljust(15)} : {str(port).ljust(5)}')
+            
+            elif len(values) == 3:
+                ip, port, pid = values 
+
+                print(f'{address.ljust(15)} : {str(port).ljust(5)}    {pid}')
+
+    if showUdp and showTcp:
+        print('UDP')
+
+    if showUdp:
+        for _, values in udpMap.items():
+            if len(values) == 2:
+                ip, port = values 
+
+                print(f'{address.ljust(15)} : {str(port).ljust(5)}')
+        
+            elif len(values) == 3:
+                ip, port, pid = values 
+
+                print(f'{address.ljust(15)} : {str(port).ljust(5)}    {pid}')
