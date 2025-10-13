@@ -34,3 +34,9 @@ Pass `help` to get help
 ```
 $ op help
 ```
+
+
+Pass `version` to get version 
+```
+$ op version
+```
