@@ -2,7 +2,7 @@ import sys
 import os
 from core import scanTcp, scanUdp, mapPids
 
-VERSION = '2.0.0'
+VERSION = '2.0.1'
 
 if __name__ == '__main__':
     args = sys.argv[1:]

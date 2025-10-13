@@ -65,7 +65,12 @@ def mapPids(tcpMap, udpMap):
         name = getoutput(f'cat /proc/{pid}/status | grep Name').replace('Name:', '').strip()
 
         pidFdPath = os.path.join('/proc', pid, 'fd')
-        fileDescriptors = os.listdir(pidFdPath)
+
+        try:
+            fileDescriptors = os.listdir(pidFdPath)
+
+        except:
+            continue
 
         for fd in fileDescriptors:
             fdPath = os.path.join(pidFdPath, fd)
