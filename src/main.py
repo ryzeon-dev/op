@@ -1,8 +1,8 @@
 import sys
 import os
-from core import scanTcp, scanUdp, mapPids
+from core import mapPids, scanProto
 
-VERSION = '2.0.2'
+VERSION = '2.1.0'
 
 if __name__ == '__main__':
     args = sys.argv[1:]
@@ -46,17 +46,38 @@ if __name__ == '__main__':
     if os.getuid():
         print('PROTO ','ADDRESS'.ljust(15), ':', 'PORT')
 
-    tcpMap = {}
-    udpMap = {}
+    tcpMap = scanProto('tcp', '0A')
+    udpMap = scanProto('udp', '07')
 
-    if showTcp:
-        tcpMap = scanTcp()
+    if showTcp and os.geteuid():
+        entries = list(tcpMap.values())
+        entries = sorted(entries, key=lambda x: int(x[1]))
 
-    if showUdp:
-        udpMap = scanUdp()
+        for entry in entries:
+            address, port = entry
+            print(f'TCP   {address:15} : {port}')
+
+
+    if showUdp and os.getuid():
+        entries = list(udpMap.values())
+        entries = sorted(entries, key=lambda x: int(x[1]))
+
+        for entry in entries:
+            address, port = entry
+            print(f'UDP   {address:15} : {port}')
 
     if os.getuid():
         sys.exit(0)
 
+    tcpLines, udpLines = mapPids(tcpMap, udpMap)
     print('PROTO  ' + 'ADDRESS'.ljust(15), ':', 'PORT'.ljust(5), '   PID',  '->', 'NAME')
-    tcpMap, udpMap = mapPids(tcpMap, udpMap)
+
+    if showTcp:
+        for entry in sorted(tcpLines, key=lambda x: int(x[1])):
+            address, port, pid, processName = entry
+            print(f'TCP    {address:15} : {port:5} {pid:6} -> {processName:6}')
+
+    if showUdp:
+        for entry in sorted(udpLines, key=lambda x: int(x[1])):
+            address, port, pid, processName = entry
+            print(f'UDP    {address:15} : {port:5} {pid:6} -> {processName:6}')

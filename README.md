@@ -5,7 +5,7 @@ FOSS utility to detect open listening ports in linux systems
 Run the installation script as root
  
 ``` 
-sudo ./install.sh 
+sudo bash ./install.sh 
 ```
 
 ## Usage

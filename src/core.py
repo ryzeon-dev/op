@@ -18,45 +18,24 @@ def unpackLine(line):
     inode = splitted[9].strip()
     return listenAddress, listenPort, inode
 
-def scanTcp():
-    tcpMap = {}
+def scanProto(proto, flag):
+    protoMap = {}
+    with open(f'/proc/net/{proto}', 'r') as file:
+        content = file.read()
 
-    with open('/proc/net/tcp', 'r') as file:
-        tcp = file.read()
-
-    for line in tcp.split('\n'):
-        if not line or line.strip().split(' ')[3] != '0A':
+    for line in content.split('\n'):
+        if not line or line.strip().split(' ')[3] != flag:
             continue
 
         address, port, inode = unpackLine(line.strip())
-        if os.getuid():
-            print(f'TCP    {address.ljust(15)} : {port}')
+        protoMap[inode] = [address, port]
 
-        else:
-            tcpMap[inode] = [address, port]
-
-    return tcpMap
-
-def scanUdp():
-    udpMap = {}
-
-    with open('/proc/net/udp', 'r') as file:
-        udp = file.read()
-
-    for line in udp.split('\n'):
-        if not line or line.strip().split(' ')[3] != '07':
-            continue
-
-        address, port, inode = unpackLine(line.strip())
-        if os.getuid():
-            print(f'UDP    {address.ljust(15)} : {port}')
-
-        else:
-            udpMap[inode] = [address, port]
-
-    return udpMap
+    return protoMap
 
 def mapPids(tcpMap, udpMap):
+    tcpEntries = []
+    udpEntries = []
+
     for element in os.listdir('/proc'):
         if not re.fullmatch('^[0-9]+$', element):
             continue
@@ -86,10 +65,10 @@ def mapPids(tcpMap, udpMap):
 
             if inode in tcpMap:
                 inodeData = tcpMap[inode]
-                print(f'TCP    {inodeData[0].ljust(15)} : {inodeData[1].ljust(5)} {pid.rjust(6)} -> {name.ljust(6)}')
+                tcpEntries.append((inodeData[0], inodeData[1], pid, name))
 
             elif inode in udpMap:
                 inodeData = udpMap[inode]
-                print(f'UDP    {inodeData[0].ljust(15)} : {inodeData[1].ljust(5)} {pid.rjust(6)} -> {name.ljust(6)}')
+                udpEntries.append((inodeData[0], inodeData[1], pid, name))
 
-    return tcpMap, udpMap
+    return tcpEntries, udpEntries
